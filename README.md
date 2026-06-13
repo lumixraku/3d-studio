@@ -37,10 +37,3 @@ A lightweight 3D editor in the browser for creating and animating scenes.
 ### Keyboard Shortcuts
 - W: Move, E: Rotate, R: Scale, Del: Delete
 - Ctrl+Z: Undo, Ctrl+D: Duplicate, Ctrl+S: Save
-
-## Getting Started
-
-```bash
-npm install
-npm run dev
-```

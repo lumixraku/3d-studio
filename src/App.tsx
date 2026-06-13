@@ -28,7 +28,7 @@ function App() {
       </div>
       <div style={styles.statusBar}>
         <span>Ready</span>
-        <span>W: Move | E: Rotate | R: Scale | Del: Delete | Ctrl+Z: Undo | Ctrl+D: Duplicate | Ctrl+S: Save</span>
+        <span>Drag: Pan | Shift+Drag: Orbit | Scroll: Zoom | W: Move | E: Rotate | R: Scale | Del: Delete | Ctrl+Z: Undo | Ctrl+D: Duplicate | Ctrl+S: Save</span>
       </div>
     </div>
   );

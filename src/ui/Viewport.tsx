@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, PerspectiveCamera } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
@@ -41,6 +42,8 @@ function CameraController({ viewTrigger }: { viewTrigger: { view: string; timest
       dampingFactor={0.1}
       minDistance={1}
       maxDistance={50}
+      // Left-drag pans; Shift+drag orbits (OrbitControls switches PAN→ROTATE while Shift is held).
+      mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
     />
   );
 }

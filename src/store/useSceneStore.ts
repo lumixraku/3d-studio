@@ -6,6 +6,26 @@ function generateId() {
   return Math.random().toString(36).slice(2, 11);
 }
 
+const SHARK_MODEL_PATH = '/cartoon shark 3d model.glb';
+
+// The editor opens with the shark GLB already loaded by default.
+function createDefaultObjects(): SceneObject[] {
+  return [
+    {
+      id: generateId(),
+      name: 'Model',
+      type: 'gltfModel',
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      material: { ...DEFAULT_MATERIAL },
+      visible: true,
+      gltfPath: SHARK_MODEL_PATH,
+      animationTracks: [],
+    },
+  ];
+}
+
 function getObjectName(type: ObjectType, objects: SceneObject[]): string {
   const count = objects.filter(o => o.type === type).length + 1;
   const names: Record<ObjectType, string> = {
@@ -69,7 +89,7 @@ interface SceneState {
 }
 
 export const useSceneStore = create<SceneState>((set, get) => ({
-  objects: [],
+  objects: createDefaultObjects(),
   selectedId: null,
   transformMode: 'translate',
   snapEnabled: false,
