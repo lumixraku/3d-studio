@@ -2,11 +2,12 @@ import { useRef } from 'react';
 import * as THREE from 'three';
 import { useSceneStore } from '../store/useSceneStore';
 import { useHistoryStore } from '../store/useHistoryStore';
-import type { ObjectType, TransformMode } from '../types';
+import type { ObjectType } from '../types';
 import { CAMERA_VIEWS } from '../types';
 
 export function Toolbar({ onCameraView }: { onCameraView: (view: string) => void }) {
   const addObject = useSceneStore(s => s.addObject);
+  const addGLBModel = useSceneStore(s => s.addGLBModel);
   const transformMode = useSceneStore(s => s.transformMode);
   const setTransformMode = useSceneStore(s => s.setTransformMode);
   const snapEnabled = useSceneStore(s => s.snapEnabled);
@@ -15,12 +16,10 @@ export function Toolbar({ onCameraView }: { onCameraView: (view: string) => void
   const toggleGrid = useSceneStore(s => s.toggleGrid);
   const objects = useSceneStore(s => s.objects);
   const loadScene = useSceneStore(s => s.loadScene);
-  const resetScene = useSceneStore(s => s.resetScene);
   const pushHistory = useHistoryStore(s => s.push);
   const undo = useHistoryStore(s => s.undo);
   const redo = useHistoryStore(s => s.redo);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const gltfInputRef = useRef<HTMLInputElement>(null);
 
   const primitives: { type: ObjectType; label: string; icon: string }[] = [
     { type: 'cube', label: 'Cube', icon: '⬜' },
@@ -64,6 +63,11 @@ export function Toolbar({ onCameraView }: { onCameraView: (view: string) => void
     };
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  const handleAddSharkModel = () => {
+    pushHistory([...objects]);
+    addGLBModel('/cartoon shark 3d model.glb');
   };
 
   const handleExportGLTF = async () => {
@@ -135,6 +139,14 @@ export function Toolbar({ onCameraView }: { onCameraView: (view: string) => void
             {l.icon} {l.label}
           </button>
         ))}
+        <span style={styles.divider}>|</span>
+        <button
+          style={styles.btn}
+          onClick={handleAddSharkModel}
+          title="3D Model"
+        >
+           3D Model
+        </button>
       </div>
 
       <div style={styles.section}>

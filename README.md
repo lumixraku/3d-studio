@@ -1,73 +1,46 @@
-# React + TypeScript + Vite
+# splineME — 3D Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A lightweight 3D editor in the browser for creating and animating scenes.
 
-Currently, two official plugins are available:
+![splineME Screenshot](screenshot.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+### Scene Building
+- Add primitives: Cube, Sphere, Cylinder, Plane, Torus, Cone
+- Lights: Point, Directional, Spot, Ambient
+- Import 3D Models from GLB/GLTF files
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Skeletal Animation
+- Automatic bone detection on imported models
+- Procedural dance animations for characters
+- Leg/arm/tail/head bone animations
+- Supports models with or without built-in animations
 
-## Expanding the ESLint configuration
+### Transform & Manipulation
+- Move, Rotate, Scale tools
+- Snap to grid for precise placement
+- Toggle grid visibility
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Scene Management
+- Scene Hierarchy panel to manage all objects
+- Properties panel to edit object details
+- Undo support
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Animation
+- Timeline-based keyframe animation
+- Play, scrub, and set custom keyframes
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Viewports
+- Multi-angle views: Front, Back, Top, Bottom, Left, Right, Perspective
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Keyboard Shortcuts
+- W: Move, E: Rotate, R: Scale, Del: Delete
+- Ctrl+Z: Undo, Ctrl+D: Duplicate, Ctrl+S: Save
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```

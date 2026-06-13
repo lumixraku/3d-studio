@@ -1,8 +1,9 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useSceneStore } from '../store/useSceneStore';
 import { TransformGizmo } from './TransformGizmo';
+import { SharkDance } from './SharkDance';
 import type { SceneObject, Keyframe, LightProps } from '../types';
 import { DEFAULT_LIGHT_PROPS } from '../types';
 
@@ -41,7 +42,6 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.Light>(null);
-  const updateObject = useSceneStore(s => s.updateObject);
   const animation = useSceneStore(s => s.animation);
 
   // Apply animation
@@ -70,6 +70,19 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
   }, [obj.position, obj.rotation, obj.scale, animation.isPlaying]);
 
   if (!obj.visible) return null;
+
+  if (obj.type === 'gltfModel') {
+    return (
+      <SharkDance
+        key={obj.id}
+        position={obj.position}
+        rotation={obj.rotation}
+        scale={obj.scale}
+        isSelected={isSelected}
+        onSelect={onSelect}
+      />
+    );
+  }
 
   const isLight = obj.type.includes('Light');
 
@@ -136,7 +149,6 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
 
   // Light helper visualization
   const renderLightHelper = () => {
-    if (!isLight || !lightRef.current) return null;
     return null;
   };
 

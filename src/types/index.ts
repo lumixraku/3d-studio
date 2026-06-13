@@ -8,7 +8,8 @@ export type ObjectType =
   | 'pointLight'
   | 'directionalLight'
   | 'spotLight'
-  | 'ambientLight';
+  | 'ambientLight'
+  | 'gltfModel';
 
 export type TransformMode = 'translate' | 'rotate' | 'scale';
 
@@ -59,6 +60,7 @@ export interface SceneObject {
   lightProps?: LightProps;
   geometryParams?: GeometryParams;
   animationTracks?: Keyframe[];
+  gltfPath?: string;
 }
 
 export interface CameraView {
