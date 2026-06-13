@@ -2,6 +2,7 @@ import { useSceneStore } from '../store/useSceneStore';
 import { useHistoryStore } from '../store/useHistoryStore';
 import type { SceneObject, MaterialProps, LightProps } from '../types';
 import { DEFAULT_LIGHT_PROPS } from '../types';
+import { SkeletonPreview } from './SkeletonPreview';
 
 function NumberInput({ label, value, onChange, step = 0.1, min, max }: {
   label: string;
@@ -121,6 +122,12 @@ export function PropertiesPanel() {
             <span style={styles.typeLabel}>{obj.type}</span>
           </div>
         </Section>
+
+        {obj.type === 'gltfModel' && (
+          <Section title="Skeleton Animation">
+            <SkeletonPreview />
+          </Section>
+        )}
 
         <Section title="Transform">
           <Vec3Input label="Position" value={obj.position}

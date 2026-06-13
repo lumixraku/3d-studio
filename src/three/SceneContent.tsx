@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { useSceneStore } from '../store/useSceneStore';
 import { TransformGizmo } from './TransformGizmo';
 import { SharkDance } from './SharkDance';
+import { SkeletonDummy } from './SkeletonDummy';
 import type { SceneObject, Keyframe, LightProps } from '../types';
 import { DEFAULT_LIGHT_PROPS } from '../types';
 
@@ -74,6 +75,19 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
   if (obj.type === 'gltfModel') {
     return (
       <SharkDance
+        key={obj.id}
+        position={obj.position}
+        rotation={obj.rotation}
+        scale={obj.scale}
+        isSelected={isSelected}
+        onSelect={onSelect}
+      />
+    );
+  }
+
+  if (obj.type === 'skeletonDummy') {
+    return (
+      <SkeletonDummy
         key={obj.id}
         position={obj.position}
         rotation={obj.rotation}

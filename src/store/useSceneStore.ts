@@ -20,6 +20,7 @@ function getObjectName(type: ObjectType, objects: SceneObject[]): string {
     spotLight: 'Spot Light',
     ambientLight: 'Ambient Light',
     gltfModel: 'Model',
+    skeletonDummy: 'Dummy',
   };
   return count === 1 ? names[type] : `${names[type]} ${count}`;
 }
@@ -46,6 +47,7 @@ interface SceneState {
 
   // Actions
   addObject: (type: ObjectType) => void;
+  addDummy: () => void;
   addGLBModel: (path: string) => void;
   removeObject: (id: string) => void;
   updateObject: (id: string, updates: Partial<SceneObject>) => void;
@@ -100,6 +102,22 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       visible: true,
       lightProps: isLight ? { ...DEFAULT_LIGHT_PROPS } : undefined,
       geometryParams: !isLight ? { ...DEFAULT_GEOMETRY[type] } : undefined,
+      animationTracks: [],
+    };
+    set({ objects: [...objects, newObj], selectedId: newObj.id });
+  },
+
+  addDummy: () => {
+    const { objects } = get();
+    const newObj: SceneObject = {
+      id: generateId(),
+      name: getObjectName('skeletonDummy', objects),
+      type: 'skeletonDummy',
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      material: { ...DEFAULT_MATERIAL },
+      visible: true,
       animationTracks: [],
     };
     set({ objects: [...objects, newObj], selectedId: newObj.id });

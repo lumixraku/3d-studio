@@ -8,6 +8,7 @@ import { CAMERA_VIEWS } from '../types';
 export function Toolbar({ onCameraView }: { onCameraView: (view: string) => void }) {
   const addObject = useSceneStore(s => s.addObject);
   const addGLBModel = useSceneStore(s => s.addGLBModel);
+  const addDummy = useSceneStore(s => s.addDummy);
   const transformMode = useSceneStore(s => s.transformMode);
   const setTransformMode = useSceneStore(s => s.setTransformMode);
   const snapEnabled = useSceneStore(s => s.snapEnabled);
@@ -68,6 +69,11 @@ export function Toolbar({ onCameraView }: { onCameraView: (view: string) => void
   const handleAddSharkModel = () => {
     pushHistory([...objects]);
     addGLBModel('/cartoon shark 3d model.glb');
+  };
+
+  const handleAddDummy = () => {
+    pushHistory([...objects]);
+    addDummy();
   };
 
   const handleExportGLTF = async () => {
@@ -146,6 +152,13 @@ export function Toolbar({ onCameraView }: { onCameraView: (view: string) => void
           title="3D Model"
         >
            3D Model
+        </button>
+        <button
+          style={styles.btn}
+          onClick={handleAddDummy}
+          title="Skeleton dummy that demonstrates the skeletal animation"
+        >
+           🦴 Dummy
         </button>
       </div>
 

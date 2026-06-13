@@ -9,7 +9,8 @@ export type ObjectType =
   | 'directionalLight'
   | 'spotLight'
   | 'ambientLight'
-  | 'gltfModel';
+  | 'gltfModel'
+  | 'skeletonDummy';
 
 export type TransformMode = 'translate' | 'rotate' | 'scale';
 
