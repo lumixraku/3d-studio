@@ -1,10 +1,11 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useSceneStore } from '../store/useSceneStore';
 import { TransformGizmo } from './TransformGizmo';
 import { SharkDance } from './SharkDance';
 import { SkeletonDummy } from './SkeletonDummy';
+import { getGeometry } from './geometryRegistry';
 import type { SceneObject, Keyframe, LightProps } from '../types';
 import { DEFAULT_LIGHT_PROPS } from '../types';
 
@@ -96,6 +97,10 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
         onSelect={onSelect}
       />
     );
+  }
+
+  if (obj.type === 'meshPart') {
+    return <MeshPartRender key={obj.id} obj={obj} isSelected={isSelected} onSelect={onSelect} />;
   }
 
   const isLight = obj.type.includes('Light');
@@ -222,6 +227,72 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
             <edgesGeometry args={[meshRef.current?.geometry]} />
             <lineBasicMaterial color="#007aff" linewidth={2} />
           </lineSegments>
+        )}
+      </mesh>
+      {isSelected && <TransformGizmo meshRef={meshRef} />}
+    </>
+  );
+}
+
+function MeshPartRender({ obj, isSelected, onSelect }: {
+  obj: SceneObject;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const animation = useSceneStore(s => s.animation);
+  const geometry = useMemo(
+    () => (obj.geometryId ? getGeometry(obj.geometryId) ?? null : null),
+    [obj.geometryId],
+  );
+
+  useFrame(() => {
+    if (!animation.isPlaying && animation.currentTime === 0) return;
+    if (!obj.animationTracks || obj.animationTracks.length === 0) return;
+    const interpolated = interpolateKeyframes(obj.animationTracks, animation.currentTime);
+    if (interpolated && meshRef.current) {
+      meshRef.current.position.set(...interpolated.position);
+      meshRef.current.rotation.set(...interpolated.rotation);
+      meshRef.current.scale.set(...interpolated.scale);
+    }
+  });
+
+  useEffect(() => {
+    if (meshRef.current && !animation.isPlaying) {
+      meshRef.current.position.set(...obj.position);
+      meshRef.current.rotation.set(...obj.rotation);
+      meshRef.current.scale.set(...obj.scale);
+    }
+  }, [obj.position, obj.rotation, obj.scale, animation.isPlaying]);
+
+  if (!geometry) return null;
+
+  return (
+    <>
+      <mesh
+        ref={meshRef}
+        position={obj.position}
+        rotation={obj.rotation}
+        scale={obj.scale}
+        castShadow
+        receiveShadow
+        onClick={(e) => { e.stopPropagation(); onSelect(); }}
+      >
+        <primitive object={geometry} attach="geometry" />
+        <meshStandardMaterial
+          color={obj.material.color}
+          metalness={obj.material.metalness}
+          roughness={obj.material.roughness}
+          wireframe={obj.material.wireframe}
+          transparent={obj.material.opacity < 1}
+          opacity={obj.material.opacity}
+          emissive={obj.material.emissive}
+          emissiveIntensity={obj.material.emissiveIntensity}
+        />
+        {isSelected && (
+          <mesh geometry={geometry}>
+            <meshBasicMaterial color="#007aff" wireframe transparent opacity={0.35} />
+          </mesh>
         )}
       </mesh>
       {isSelected && <TransformGizmo meshRef={meshRef} />}

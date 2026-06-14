@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSceneStore } from '../store/useSceneStore';
 import { useHistoryStore } from '../store/useHistoryStore';
 import type { SceneObject, MaterialProps, LightProps } from '../types';
@@ -71,7 +72,11 @@ export function PropertiesPanel() {
   const objects = useSceneStore(s => s.objects);
   const selectedId = useSceneStore(s => s.selectedId);
   const updateObject = useSceneStore(s => s.updateObject);
+  const splitObject = useSceneStore(s => s.splitObject);
   const pushHistory = useHistoryStore(s => s.push);
+  const [splitBusy, setSplitBusy] = useState(false);
+  const [splitMsg, setSplitMsg] = useState<string | null>(null);
+  const [cutSensitivity, setCutSensitivity] = useState(0);
 
   const obj = objects.find(o => o.id === selectedId);
 
@@ -126,6 +131,47 @@ export function PropertiesPanel() {
         {obj.type === 'gltfModel' && (
           <Section title="Skeleton Animation">
             <SkeletonPreview />
+          </Section>
+        )}
+
+        {obj.type === 'gltfModel' && (
+          <Section title="Split Parts">
+            <div style={styles.splitDesc}>
+              Break the model into independently movable parts.
+            </div>
+            <div style={styles.inputRow}>
+              <label style={styles.inputLabel}>Sensitivity</label>
+              <input
+                type="range"
+                min={0}
+                max={40}
+                step={1}
+                value={cutSensitivity}
+                style={{ flex: 1 }}
+                onChange={(e) => setCutSensitivity(parseInt(e.target.value))}
+              />
+              <span style={styles.splitVal}>{cutSensitivity === 0 ? 'Off' : (cutSensitivity / 10).toFixed(1)}</span>
+            </div>
+            <div style={styles.splitHint}>
+              {cutSensitivity === 0
+                ? 'Connected parts only — splits multi-piece models.'
+                : 'Also cuts thin/long connections. Higher = more fragments.'}
+            </div>
+            <button
+              style={{ ...styles.splitBtn, ...(splitBusy ? styles.splitBtnBusy : {}) }}
+              disabled={splitBusy}
+              onClick={async () => {
+                setSplitBusy(true);
+                setSplitMsg(null);
+                pushHistory([...objects]);
+                const n = await splitObject(obj.id, cutSensitivity / 10);
+                setSplitBusy(false);
+                setSplitMsg(n > 0 ? `Split into ${n} parts.` : 'Model is a single connected piece — try raising sensitivity.');
+              }}
+            >
+              {splitBusy ? 'Splitting…' : '✂ Split into Parts'}
+            </button>
+            {splitMsg && <div style={styles.splitResult}>{splitMsg}</div>}
           </Section>
         )}
 
@@ -345,5 +391,43 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     outline: 'none',
     textAlign: 'right',
+  },
+  splitDesc: {
+    fontSize: 11,
+    color: '#86868b',
+    marginBottom: 8,
+  },
+  splitVal: {
+    fontSize: 11,
+    color: '#1d1d1f',
+    width: 28,
+    textAlign: 'right',
+  },
+  splitHint: {
+    fontSize: 10,
+    color: '#aeaeb2',
+    marginBottom: 8,
+    lineHeight: 1.4,
+  },
+  splitBtn: {
+    width: '100%',
+    background: '#007aff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    padding: '8px',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  splitBtnBusy: {
+    background: '#a0c4ff',
+    cursor: 'default',
+  },
+  splitResult: {
+    fontSize: 11,
+    color: '#34c759',
+    marginTop: 8,
+    textAlign: 'center',
   },
 };

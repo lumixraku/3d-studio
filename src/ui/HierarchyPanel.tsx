@@ -60,6 +60,7 @@ export function HierarchyPanel() {
       case 'plane': return '▬';
       case 'torus': return '◯';
       case 'cone': return '△';
+      case 'meshPart': return '🧩';
       default: return '◻';
     }
   };

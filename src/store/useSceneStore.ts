@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+import * as THREE from 'three';
 import type { SceneObject, ObjectType, TransformMode, Keyframe } from '../types';
 import { DEFAULT_MATERIAL, DEFAULT_LIGHT_PROPS, DEFAULT_GEOMETRY } from '../types';
+import { registerGeometry, removeGeometry } from '../three/geometryRegistry';
+import { loadAndSplitGLB } from '../three/splitGeometry';
 
 function generateId() {
   return Math.random().toString(36).slice(2, 11);
@@ -40,6 +43,7 @@ function getObjectName(type: ObjectType, objects: SceneObject[]): string {
     spotLight: 'Spot Light',
     ambientLight: 'Ambient Light',
     gltfModel: 'Model',
+    meshPart: 'Part',
     skeletonDummy: 'Dummy',
   };
   return count === 1 ? names[type] : `${names[type]} ${count}`;
@@ -72,6 +76,7 @@ interface SceneState {
   removeObject: (id: string) => void;
   updateObject: (id: string, updates: Partial<SceneObject>) => void;
   duplicateObject: (id: string) => void;
+  splitObject: (id: string, cutThreshold?: number) => Promise<number>;
   selectObject: (id: string | null) => void;
   setTransformMode: (mode: TransformMode) => void;
   toggleSnap: () => void;
@@ -161,10 +166,14 @@ export const useSceneStore = create<SceneState>((set, get) => ({
   },
 
   removeObject: (id) => {
-    set(state => ({
-      objects: state.objects.filter(o => o.id !== id),
-      selectedId: state.selectedId === id ? null : state.selectedId,
-    }));
+    set(state => {
+      const removed = state.objects.find(o => o.id === id);
+      if (removed?.geometryId) removeGeometry(removed.geometryId);
+      return {
+        objects: state.objects.filter(o => o.id !== id),
+        selectedId: state.selectedId === id ? null : state.selectedId,
+      };
+    });
   },
 
   updateObject: (id, updates) => {
@@ -184,6 +193,54 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       position: [obj.position[0] + 1, obj.position[1], obj.position[2]],
     };
     set({ objects: [...objects, newObj], selectedId: newObj.id });
+  },
+
+  splitObject: async (id, cutThreshold = 0) => {
+    const { objects } = get();
+    const obj = objects.find(o => o.id === id);
+    if (!obj || obj.type !== 'gltfModel' || !obj.gltfPath) return 0;
+
+    const parts = await loadAndSplitGLB(obj.gltfPath, cutThreshold);
+    if (parts.length === 0) return 0;
+
+    const modelMatrix = new THREE.Matrix4().compose(
+      new THREE.Vector3(...obj.position),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(...obj.rotation)),
+      new THREE.Vector3(...obj.scale),
+    );
+
+    const partColors = [
+      '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#a29bfe', '#fd79a8',
+      '#00b894', '#e17055', '#74b9ff', '#ffeaa7', '#dfe6e9', '#fab1a0',
+    ];
+
+    const newObjects: SceneObject[] = parts.map((part, i) => {
+      const geometryId = generateId();
+      registerGeometry(geometryId, part.geometry);
+      const worldCenter = part.center.clone().applyMatrix4(modelMatrix);
+      return {
+        id: generateId(),
+        name: part.name,
+        type: 'meshPart',
+        position: [worldCenter.x, worldCenter.y, worldCenter.z],
+        rotation: [...obj.rotation] as [number, number, number],
+        scale: [...obj.scale] as [number, number, number],
+        material: { ...DEFAULT_MATERIAL, color: partColors[i % partColors.length] },
+        visible: true,
+        geometryId,
+        animationTracks: [],
+      };
+    });
+
+    set(state => ({
+      objects: [
+        ...state.objects.filter(o => o.id !== id),
+        ...newObjects,
+      ],
+      selectedId: newObjects[0]?.id ?? null,
+    }));
+
+    return parts.length;
   },
 
   selectObject: (id) => set({ selectedId: id }),

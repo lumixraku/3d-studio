@@ -10,6 +10,7 @@ export type ObjectType =
   | 'spotLight'
   | 'ambientLight'
   | 'gltfModel'
+  | 'meshPart'
   | 'skeletonDummy';
 
 export type TransformMode = 'translate' | 'rotate' | 'scale';
@@ -62,6 +63,7 @@ export interface SceneObject {
   geometryParams?: GeometryParams;
   animationTracks?: Keyframe[];
   gltfPath?: string;
+  geometryId?: string;
 }
 
 export interface CameraView {
