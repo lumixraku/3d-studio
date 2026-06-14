@@ -27,11 +27,19 @@ behind Meshy / Tripo's "split" feature.
 - Implemented in `src/three/splitGeometry.ts` + `src/three/geometryRegistry.ts`.
 
 ### Skeletal Animation
-- Runtime auto-rigging: static GLB meshes are skinned to a procedural skeleton
-  (inverse-square-distance bone weights) with no pre-existing rig required.
-- Procedural walk / dance cycles for the default shark model.
-- Bone / arm / leg / tail / head animation; works on models with or without
-  built-in animations.
+- **Hardcoded rig + auto-skinning** (not full auto-rigging):
+  - The skeleton topology and bone positions are hand-authored for the default
+    shark model in `src/three/sharkWalkRig.ts` (`SHARK_BONE_ORDER` + offsets
+    measured from the GLB's bounding box).
+  - Skin weights are computed automatically at runtime: each vertex is bound to
+    its two nearest bones by **inverse-square distance** (`SharkDance.tsx:buildRig`),
+    so a static GLB mesh with no pre-existing rig can still be deformed.
+  - This is **not** a general auto-rigger — swapping in a different GLB will
+    place the bones in the wrong spots. For arbitrary models you'd need a real
+    auto-rig algorithm (Pinocchio, medial-axis, or an AI rigger).
+- Procedural walk / dance cycles drive the shark bones (leg swing, tail wag,
+  spine bob, head counter-motion).
+- Works on models with or without built-in animations.
 - Skeleton preview thumbnail in the properties panel.
 
 ### Transform & Manipulation
