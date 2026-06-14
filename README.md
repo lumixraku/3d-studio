@@ -2,7 +2,7 @@
 
 A browser-based 3D editor for building, animating, and dissecting scenes — built with React, Three.js, and Zustand.
 
-![3D Studio Screenshot](screenshot.png)
+![3D Studio — Editor Overview](public/screenshot-editor.png)
 
 ## Features
 
@@ -15,6 +15,9 @@ A browser-based 3D editor for building, animating, and dissecting scenes — bui
 ### Model Part-Splitting (拆件)
 Break a model into independently movable, color-coded parts — the same idea
 behind Meshy / Tripo's "split" feature.
+
+![3D Studio — Part Splitting](public/screenshot-split.png)
+
 - **Connected-components analysis** (Union-Find) splits multi-piece models
   instantly and losslessly.
 - **Long-edge-breaking heuristic** (adjustable sensitivity slider) cuts
