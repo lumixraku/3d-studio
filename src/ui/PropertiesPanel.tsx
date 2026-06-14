@@ -71,14 +71,23 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function PropertiesPanel() {
   const objects = useSceneStore(s => s.objects);
   const selectedId = useSceneStore(s => s.selectedId);
+  const selectedIds = useSceneStore(s => s.selectedIds);
   const updateObject = useSceneStore(s => s.updateObject);
   const splitObject = useSceneStore(s => s.splitObject);
+  const mergeSelected = useSceneStore(s => s.mergeSelected);
   const pushHistory = useHistoryStore(s => s.push);
   const [splitBusy, setSplitBusy] = useState(false);
   const [splitMsg, setSplitMsg] = useState<string | null>(null);
   const [cutSensitivity, setCutSensitivity] = useState(0);
 
   const obj = objects.find(o => o.id === selectedId);
+
+  const multiSelection = selectedIds.length > 1
+    ? selectedIds
+        .map(id => objects.find(o => o.id === id))
+        .filter((o): o is SceneObject => !!o)
+    : [];
+  const allParts = multiSelection.length > 0 && multiSelection.every(o => o.type === 'meshPart');
 
   if (!obj) {
     return (
@@ -116,6 +125,20 @@ export function PropertiesPanel() {
     <div style={styles.panel}>
       <div style={styles.header}>Properties</div>
       <div style={styles.content}>
+        {allParts && (
+          <Section title={`Multi-Selection (${multiSelection.length})`}>
+            <div style={styles.splitDesc}>
+              {multiSelection.length} parts selected. Merge them into a single part.
+            </div>
+            <button
+              style={styles.splitBtn}
+              onClick={() => { pushHistory([...objects]); mergeSelected(); }}
+            >
+              ⬓ Merge Selected Parts
+            </button>
+          </Section>
+        )}
+
         <Section title="Object">
           <div style={styles.inputRow}>
             <label style={styles.inputLabel}>Name</label>

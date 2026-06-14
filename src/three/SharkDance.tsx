@@ -9,8 +9,9 @@ interface SharkDanceProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: [number, number, number];
-  onSelect?: () => void;
+  onSelect?: (additive?: boolean) => void;
   isSelected?: boolean;
+  isPrimary?: boolean;
 }
 
 const MODEL_PATH = '/cartoon shark 3d model.glb';
@@ -88,6 +89,7 @@ export function SharkDance({
   scale = [1, 1, 1],
   onSelect,
   isSelected,
+  isPrimary,
 }: SharkDanceProps) {
   const { scene } = useGLTF(MODEL_PATH);
   const groupRef = useRef<THREE.Group>(null);
@@ -121,7 +123,7 @@ export function SharkDance({
         scale={scale}
         onClick={(e) => {
           e.stopPropagation();
-          onSelect?.();
+          onSelect?.(e.shiftKey || e.metaKey || e.ctrlKey);
         }}
       >
         <group ref={walkRef}>
@@ -134,7 +136,7 @@ export function SharkDance({
           </mesh>
         )}
       </group>
-      {isSelected && <TransformGizmo meshRef={groupRef} />}
+      {isPrimary && <TransformGizmo meshRef={groupRef} />}
     </>
   );
 }

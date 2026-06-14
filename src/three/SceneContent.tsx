@@ -37,10 +37,11 @@ function interpolateKeyframes(tracks: Keyframe[], time: number) {
   return tracks[tracks.length - 1];
 }
 
-function SceneObject3D({ obj, isSelected, onSelect }: {
+function SceneObject3D({ obj, isSelected, isPrimary, onSelect }: {
   obj: SceneObject;
   isSelected: boolean;
-  onSelect: () => void;
+  isPrimary: boolean;
+  onSelect: (additive?: boolean) => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.Light>(null);
@@ -81,6 +82,7 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
         rotation={obj.rotation}
         scale={obj.scale}
         isSelected={isSelected}
+        isPrimary={isPrimary}
         onSelect={onSelect}
       />
     );
@@ -94,13 +96,14 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
         rotation={obj.rotation}
         scale={obj.scale}
         isSelected={isSelected}
+        isPrimary={isPrimary}
         onSelect={onSelect}
       />
     );
   }
 
   if (obj.type === 'meshPart') {
-    return <MeshPartRender key={obj.id} obj={obj} isSelected={isSelected} onSelect={onSelect} />;
+    return <MeshPartRender key={obj.id} obj={obj} isSelected={isSelected} isPrimary={isPrimary} onSelect={onSelect} />;
   }
 
   const isLight = obj.type.includes('Light');
@@ -178,7 +181,7 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
         position={obj.position}
         rotation={obj.rotation}
         scale={obj.scale}
-        onClick={(e) => { e.stopPropagation(); onSelect(); }}
+        onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey || e.metaKey || e.ctrlKey); }}
       >
         {renderLight()}
         {/* Light indicator sphere */}
@@ -209,7 +212,7 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
         scale={obj.scale}
         castShadow
         receiveShadow
-        onClick={(e) => { e.stopPropagation(); onSelect(); }}
+        onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey || e.metaKey || e.ctrlKey); }}
       >
         {renderGeometry()}
         <meshStandardMaterial
@@ -229,15 +232,16 @@ function SceneObject3D({ obj, isSelected, onSelect }: {
           </lineSegments>
         )}
       </mesh>
-      {isSelected && <TransformGizmo meshRef={meshRef} />}
+      {isPrimary && <TransformGizmo meshRef={meshRef} />}
     </>
   );
 }
 
-function MeshPartRender({ obj, isSelected, onSelect }: {
+function MeshPartRender({ obj, isSelected, isPrimary, onSelect }: {
   obj: SceneObject;
   isSelected: boolean;
-  onSelect: () => void;
+  isPrimary: boolean;
+  onSelect: (additive?: boolean) => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const animation = useSceneStore(s => s.animation);
@@ -276,7 +280,7 @@ function MeshPartRender({ obj, isSelected, onSelect }: {
         scale={obj.scale}
         castShadow
         receiveShadow
-        onClick={(e) => { e.stopPropagation(); onSelect(); }}
+        onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey || e.metaKey || e.ctrlKey); }}
       >
         <primitive object={geometry} attach="geometry" />
         <meshStandardMaterial
@@ -295,7 +299,7 @@ function MeshPartRender({ obj, isSelected, onSelect }: {
           </mesh>
         )}
       </mesh>
-      {isSelected && <TransformGizmo meshRef={meshRef} />}
+      {isPrimary && <TransformGizmo meshRef={meshRef} />}
     </>
   );
 }
@@ -303,7 +307,9 @@ function MeshPartRender({ obj, isSelected, onSelect }: {
 export function SceneContent() {
   const objects = useSceneStore(s => s.objects);
   const selectedId = useSceneStore(s => s.selectedId);
+  const selectedIds = useSceneStore(s => s.selectedIds);
   const selectObject = useSceneStore(s => s.selectObject);
+  const multi = selectedIds.length > 1;
 
   return (
     <>
@@ -311,8 +317,9 @@ export function SceneContent() {
         <SceneObject3D
           key={obj.id}
           obj={obj}
-          isSelected={obj.id === selectedId}
-          onSelect={() => selectObject(obj.id)}
+          isSelected={selectedIds.includes(obj.id)}
+          isPrimary={obj.id === selectedId && !multi}
+          onSelect={(additive) => selectObject(obj.id, additive)}
         />
       ))}
     </>

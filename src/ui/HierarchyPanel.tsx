@@ -5,6 +5,7 @@ import { useHistoryStore } from '../store/useHistoryStore';
 export function HierarchyPanel() {
   const objects = useSceneStore(s => s.objects);
   const selectedId = useSceneStore(s => s.selectedId);
+  const selectedIds = useSceneStore(s => s.selectedIds);
   const selectObject = useSceneStore(s => s.selectObject);
   const updateObject = useSceneStore(s => s.updateObject);
   const removeObject = useSceneStore(s => s.removeObject);
@@ -77,10 +78,11 @@ export function HierarchyPanel() {
             key={obj.id}
             style={{
               ...styles.item,
-              ...(obj.id === selectedId ? styles.itemSelected : {}),
+              ...(selectedIds.includes(obj.id) ? styles.itemSelected : {}),
+              ...(obj.id === selectedId ? styles.itemPrimary : {}),
               opacity: obj.visible ? 1 : 0.5,
             }}
-            onClick={() => selectObject(obj.id)}
+            onClick={(e) => selectObject(obj.id, e.shiftKey || e.metaKey || e.ctrlKey)}
             onContextMenu={(e) => handleContextMenu(e, obj.id)}
           >
             <span style={styles.icon}>{getIcon(obj.type)}</span>
@@ -168,6 +170,10 @@ const styles: Record<string, React.CSSProperties> = {
   itemSelected: {
     background: '#e8e8ed',
     color: '#1d1d1f',
+  },
+  itemPrimary: {
+    boxShadow: 'inset 3px 0 0 #007aff',
+    fontWeight: 600,
   },
   icon: {
     fontSize: 14,

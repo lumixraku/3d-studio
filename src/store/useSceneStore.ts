@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import * as THREE from 'three';
 import type { SceneObject, ObjectType, TransformMode, Keyframe } from '../types';
 import { DEFAULT_MATERIAL, DEFAULT_LIGHT_PROPS, DEFAULT_GEOMETRY } from '../types';
-import { registerGeometry, removeGeometry } from '../three/geometryRegistry';
+import { registerGeometry, removeGeometry, mergeGeometriesWithTransform, getGeometry } from '../three/geometryRegistry';
 import { loadAndSplitGLB } from '../three/splitGeometry';
 
 function generateId() {
@@ -52,6 +52,7 @@ function getObjectName(type: ObjectType, objects: SceneObject[]): string {
 interface SceneState {
   objects: SceneObject[];
   selectedId: string | null;
+  selectedIds: string[];
   transformMode: TransformMode;
   snapEnabled: boolean;
   snapValue: number;
@@ -77,7 +78,8 @@ interface SceneState {
   updateObject: (id: string, updates: Partial<SceneObject>) => void;
   duplicateObject: (id: string) => void;
   splitObject: (id: string, cutThreshold?: number) => Promise<number>;
-  selectObject: (id: string | null) => void;
+  mergeSelected: () => void;
+  selectObject: (id: string | null, additive?: boolean) => void;
   setTransformMode: (mode: TransformMode) => void;
   toggleSnap: () => void;
   setSnapValue: (value: number) => void;
@@ -96,6 +98,7 @@ interface SceneState {
 export const useSceneStore = create<SceneState>((set, get) => ({
   objects: createDefaultObjects(),
   selectedId: null,
+  selectedIds: [],
   transformMode: 'translate',
   snapEnabled: false,
   snapValue: 0.5,
@@ -129,7 +132,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       geometryParams: !isLight ? { ...DEFAULT_GEOMETRY[type] } : undefined,
       animationTracks: [],
     };
-    set({ objects: [...objects, newObj], selectedId: newObj.id });
+    set({ objects: [...objects, newObj], selectedId: newObj.id, selectedIds: [newObj.id] });
   },
 
   addDummy: () => {
@@ -145,7 +148,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       visible: true,
       animationTracks: [],
     };
-    set({ objects: [...objects, newObj], selectedId: newObj.id });
+    set({ objects: [...objects, newObj], selectedId: newObj.id, selectedIds: [newObj.id] });
   },
 
   addGLBModel: (path) => {
@@ -162,16 +165,18 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       gltfPath: path,
       animationTracks: [],
     };
-    set({ objects: [...objects, newObj], selectedId: newObj.id });
+    set({ objects: [...objects, newObj], selectedId: newObj.id, selectedIds: [newObj.id] });
   },
 
   removeObject: (id) => {
     set(state => {
       const removed = state.objects.find(o => o.id === id);
       if (removed?.geometryId) removeGeometry(removed.geometryId);
+      const newSelectedIds = state.selectedIds.filter(i => i !== id);
       return {
         objects: state.objects.filter(o => o.id !== id),
         selectedId: state.selectedId === id ? null : state.selectedId,
+        selectedIds: newSelectedIds,
       };
     });
   },
@@ -192,7 +197,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       name: `${obj.name} Copy`,
       position: [obj.position[0] + 1, obj.position[1], obj.position[2]],
     };
-    set({ objects: [...objects, newObj], selectedId: newObj.id });
+    set({ objects: [...objects, newObj], selectedId: newObj.id, selectedIds: [newObj.id] });
   },
 
   splitObject: async (id, cutThreshold = 0) => {
@@ -238,12 +243,89 @@ export const useSceneStore = create<SceneState>((set, get) => ({
         ...newObjects,
       ],
       selectedId: newObjects[0]?.id ?? null,
+      selectedIds: newObjects.length ? [newObjects[0].id] : [],
     }));
 
     return parts.length;
   },
 
-  selectObject: (id) => set({ selectedId: id }),
+  mergeSelected: () => {
+    const { objects, selectedIds } = get();
+    const parts = objects.filter(
+      o => selectedIds.includes(o.id) && o.type === 'meshPart' && o.geometryId,
+    );
+    if (parts.length < 2) return;
+
+    const items = parts
+      .map(p => {
+        const geo = p.geometryId ? getGeometry(p.geometryId) : undefined;
+        if (!geo) return null;
+        const matrix = new THREE.Matrix4().compose(
+          new THREE.Vector3(...p.position),
+          new THREE.Quaternion().setFromEuler(new THREE.Euler(...p.rotation)),
+          new THREE.Vector3(...p.scale),
+        );
+        return { geometry: geo, matrix };
+      })
+      .filter((x): x is { geometry: THREE.BufferGeometry; matrix: THREE.Matrix4 } => x !== null);
+
+    if (items.length < 2) return;
+
+    const merged = mergeGeometriesWithTransform(items);
+    merged.computeBoundingBox();
+    const center = new THREE.Vector3();
+    merged.boundingBox!.getCenter(center);
+    merged.translate(-center.x, -center.y, -center.z);
+    merged.computeBoundingBox();
+    merged.computeBoundingSphere();
+
+    const newGeoId = generateId();
+    registerGeometry(newGeoId, merged);
+
+    const newObj: SceneObject = {
+      id: generateId(),
+      name: 'Merged Part',
+      type: 'meshPart',
+      position: [center.x, center.y, center.z],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      material: { ...DEFAULT_MATERIAL },
+      visible: true,
+      geometryId: newGeoId,
+      animationTracks: [],
+    };
+
+    // NOTE: old part geometries are intentionally NOT disposed here so that
+    // undo can restore them. They are reclaimed when the object is deleted.
+    set(state => ({
+      objects: [
+        ...state.objects.filter(o => !selectedIds.includes(o.id)),
+        newObj,
+      ],
+      selectedId: newObj.id,
+      selectedIds: [newObj.id],
+    }));
+  },
+
+  selectObject: (id, additive) => {
+    if (id === null) {
+      set({ selectedId: null, selectedIds: [] });
+      return;
+    }
+    if (additive) {
+      set(state => {
+        const ids = state.selectedIds.includes(id)
+          ? state.selectedIds.filter(i => i !== id)
+          : [...state.selectedIds, id];
+        return {
+          selectedIds: ids,
+          selectedId: ids.length > 0 ? ids[ids.length - 1] : null,
+        };
+      });
+    } else {
+      set({ selectedId: id, selectedIds: [id] });
+    }
+  },
 
   setTransformMode: (mode) => set({ transformMode: mode }),
 
@@ -314,7 +396,7 @@ export const useSceneStore = create<SceneState>((set, get) => ({
     }));
   },
 
-  resetScene: () => set({ objects: [], selectedId: null }),
+  resetScene: () => set({ objects: [], selectedId: null, selectedIds: [] }),
 
-  loadScene: (objects) => set({ objects, selectedId: null }),
+  loadScene: (objects) => set({ objects, selectedId: null, selectedIds: [] }),
 }));

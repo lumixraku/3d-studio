@@ -156,11 +156,6 @@ function extractSubGeometry(
   return sub;
 }
 
-const PART_NAMES = [
-  'Body', 'Head', 'Arm', 'Leg', 'Tail', 'Wing', 'Fin', 'Ear',
-  'Torso', 'Hand', 'Foot', 'Eye', 'Horn', 'Part',
-];
-
 /**
  * Load a GLB/GLTF file, collect all meshes, and split every mesh geometry into
  * connected components. Returns one SplitPart per component.
@@ -200,9 +195,8 @@ export async function loadAndSplitGLB(
       sub.computeBoundingBox();
       sub.computeBoundingSphere();
 
-      const name = idx < PART_NAMES.length ? PART_NAMES[idx] : `${baseName} ${idx + 1}`;
       parts.push({
-        name: multi ? `${baseName}/${name}` : name,
+        name: multi ? `${baseName} ${idx + 1}` : `Part ${idx + 1}`,
         geometry: sub,
         center,
       });

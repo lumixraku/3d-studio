@@ -7,8 +7,9 @@ interface SkeletonDummyProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: [number, number, number];
-  onSelect?: () => void;
+  onSelect?: (additive?: boolean) => void;
   isSelected?: boolean;
+  isPrimary?: boolean;
 }
 
 const JOINT_RADIUS = 0.07;
@@ -77,6 +78,7 @@ export function SkeletonDummy({
   scale = [1, 1, 1],
   onSelect,
   isSelected,
+  isPrimary,
 }: SkeletonDummyProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { armature, bones, helper } = useMemo(() => {
@@ -124,7 +126,7 @@ export function SkeletonDummy({
         scale={scale}
         onClick={(e) => {
           e.stopPropagation();
-          onSelect?.();
+          onSelect?.(e.shiftKey || e.metaKey || e.ctrlKey);
         }}
       >
         <primitive object={armature} />
@@ -136,7 +138,7 @@ export function SkeletonDummy({
           </mesh>
         )}
       </group>
-      {isSelected && <TransformGizmo meshRef={groupRef} />}
+      {isPrimary && <TransformGizmo meshRef={groupRef} />}
     </>
   );
 }
